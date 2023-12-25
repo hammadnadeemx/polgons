@@ -28,6 +28,7 @@ bool compare_counter_clockwise(const Point &reference, const Point &point1,
 void sort_points_counter_clockwise(std::vector<Point> &points) {
   if (points.size() < 3) {
     // Sorting is not meaningful for fewer than three points
+    std::cout << "Not enough points to sort\n";
     return;
   }
 
@@ -104,49 +105,29 @@ bool Polygon::read_file(const std::string &filename) {
   points.clear();
 
   // Open the file
-  std::ifstream inputfile(filename);
-  if (!inputfile.is_open()) {
+  std::ifstream inputFile(filename);
+  if (!inputFile.is_open()) {
     std::cerr << "Error opening file: " << filename << std::endl;
-    return false;
+    return false; // Return an empty vector on error
   }
 
   // Read each line from the file
   std::string line;
-  while (std::getline(inputfile, line)) {
-    // Use a stringstream to parse the comma-separated values
+  Point temp;
+  while (std::getline(inputFile, line)) {
     std::istringstream iss(line);
-    std::string token;
-    Point temp;
 
-    // Read x and y coordinates
-    if (std::getline(iss, token, ',')) {
-      try {
-        temp.x = std::stod(token);
-      } catch (const std::invalid_argument &e) {
-        std::cerr << "Invalid x-coordinate format: " << token << std::endl;
-        return false;
-      }
+    // Parse x and y values from the line
+    if (iss >> temp.x >> temp.y) {
+      // Create a Point2D object and add it to the vector
+      points.emplace_back(temp);
     } else {
-      std::cerr << "Missing x-coordinate in line: " << line << std::endl;
-      return false;
+      std::cerr << "Error parsing line: " << line << std::endl;
     }
-
-    if (std::getline(iss, token, ',')) {
-      try {
-        temp.y = std::stod(token);
-      } catch (const std::invalid_argument &e) {
-        std::cerr << "Invalid y-coordinate format: " << token << std::endl;
-        return false;
-      }
-    } else {
-      std::cerr << "Missing y-coordinate in line: " << line << std::endl;
-      return false;
-    }
-    this->points.emplace_back(temp);
   }
 
   // Close the file
-  inputfile.close();
+  inputFile.close();
 
   // some algorithms need the points sorted in ccw order
   sort_points_counter_clockwise(points);
@@ -180,8 +161,8 @@ bool Polygon::write_file(const std::string &filename) {
 std::ostream &operator<<(std::ostream &os, const Polygon &polygon) {
   os << "Polygon coordinates:" << std::endl;
   for (size_t i = 0; i < polygon.points.size(); ++i) {
-    os << "Point " << i + 1 << ": (" << polygon.points[i].x << ", "
-       << polygon.points[i].y << ")" << std::endl;
+    os << "(" << polygon.points[i].x << "," << polygon.points[i].y << ")"
+       << (i + 1 == polygon.points.size() ? "\n" : ",");
   }
   return os;
 }
@@ -210,8 +191,8 @@ Polygon Polygon::compute_union(Polygon A, Polygon B) {
 
     // remove internal points from resultant set
     for (auto &p : vertex_set) {
-      if ((is_point_inside_polygon(p, A.points) != 1) ||
-          (is_point_inside_polygon(p, B.points) != 1)) {
+      if (!((is_point_inside_polygon(p, A.points) == 1) ||
+            (is_point_inside_polygon(p, B.points) == 1))) {
         result.points.emplace_back(p);
       }
     }
@@ -234,20 +215,23 @@ Polygon Polygon::compute_intersection(Polygon A, Polygon B) {
     for (int i = 1; i < A.points.size(); i++) {   // edge 1
       for (int j = 1; j < B.points.size(); j++) { // edge 2
         if (LineLineIntersect(A.points[i - 1], A.points[i], B.points[j - 1],
-                              B.points[j], intersection))
+                              B.points[j], intersection)) {
           vertex_set.insert(intersection);
+        }
       }
     }
 
     // if point lies in or on the polygon add to the set
     for (auto &pA : A.points)
-      if (is_point_inside_polygon(pA, B.points) != -1)
+      if (is_point_inside_polygon(pA, B.points) >= 0) {
         vertex_set.insert(pA);
+      }
 
     // if point lies in or on the polygon add to the set
     for (auto &pB : B.points)
-      if (is_point_inside_polygon(pB, A.points) != -1)
+      if (is_point_inside_polygon(pB, A.points) >= 0) {
         vertex_set.insert(pB);
+      }
 
     for (auto &p : vertex_set)
       result.points.emplace_back(p);
@@ -281,7 +265,7 @@ Polygon Polygon::compute_subtraction(Polygon A, Polygon B) {
 
     // remove points that lie in B from resultant set
     for (auto &p : vertex_set) {
-      if (is_point_inside_polygon(p, B.points) != 1)
+      if (!(is_point_inside_polygon(p, B.points) == 1))
         result.points.emplace_back(p);
     }
 

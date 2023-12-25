@@ -5,12 +5,35 @@
 
 int main() {
   // Example usage of the Polygon class
-  std::vector<Point> p1 = {{1.0, 2.0}, {4.0, 5.0}, {2.0, 3.0}, {5.0, 6.0}};
+  Polygon triangle, square, result;
 
-  Polygon poly1(p1);
-  Polygon poly2(p1);
+  if (!square.read_file("/home/hammad/workspace/polgons/square.csv")) {
+    std::cout << "Failed to read square data ! \n";
+    return -1;
+  }
 
-  if (poly1 == poly2) {
+  if (!triangle.read_file("/home/hammad/workspace/polgons/triangle.csv")) {
+    std::cout << "Failed to read triangle data ! \n";
+    return -2;
+  }
+
+  result = result.compute_union(triangle, square);
+  std::cout << "union\n";
+  std::cout << result << std::endl;
+
+  result = result.compute_intersection(triangle, square);
+  std::cout << "intersection\n";
+  std::cout << result << std::endl;
+
+  result = result.compute_subtraction(triangle, square);
+  std::cout << "traingle - square\n";
+  std::cout << result << std::endl;
+
+  result = result.compute_subtraction(square, triangle);
+  std::cout << "square - traingle\n";
+  std::cout << result << std::endl;
+
+  if (square == triangle) {
     std::cout << "Polygons are equal." << std::endl;
   } else {
     std::cout << "Polygons are not equal." << std::endl;

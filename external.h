@@ -6,6 +6,41 @@
 
 struct Point; // forward decleration
 
+int PointInsideOrOnTriangle(const Point &p, const Point &v0, const Point &v1,
+                            const Point &v2) {
+  // Calculate barycentric coordinates
+  double detT = (v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y);
+  double alpha =
+      ((v1.y - v2.y) * (p.x - v2.x) + (v2.x - v1.x) * (p.y - v2.y)) / detT;
+  double beta =
+      ((v2.y - v0.y) * (p.x - v2.x) + (v0.x - v2.x) * (p.y - v2.y)) / detT;
+  double gamma = 1.0 - alpha - beta;
+
+  // Check if the point lies inside the triangle or on its edges
+  if (alpha >= 0.0 && beta >= 0.0 && gamma >= 0.0)
+    return 1;
+
+  // Check if the point lies on any of the triangle edges
+  if (std::abs(alpha) < std::numeric_limits<double>::epsilon() ||
+      std::abs(beta) < std::numeric_limits<double>::epsilon())
+    return 0;
+
+  if (std::abs(beta) < std::numeric_limits<double>::epsilon() ||
+      std::abs(gamma) < std::numeric_limits<double>::epsilon())
+    return 0;
+
+  if (std::abs(gamma) < std::numeric_limits<double>::epsilon() ||
+      std::abs(alpha) < std::numeric_limits<double>::epsilon())
+    return 0;
+
+  return -1;
+}
+
+bool PointOnLineSegment(const Point &p, const Point &start, const Point &end) {
+  return (p.x >= std::min(start.x, end.x) && p.x <= std::max(start.x, end.x) &&
+          p.y >= std::min(start.y, end.y) && p.y <= std::max(start.y, end.y));
+}
+
 // the following 2 functions for line intersection were adapted from
 // https://gist.github.com/TimSC/47203a0f5f15293d2099507ba5da44e6#file-linelineintersect-cpp-L21
 
@@ -50,7 +85,11 @@ bool LineLineIntersect(Point p1,         // Line 1 start
       !std::isfinite(intersect.y)) // Probably a numerical issue
     return false;
 
-  return true; // All OK
+  // Check if the point lies within both line segments
+  bool onSegment1 = PointOnLineSegment(intersect, p1, p2);
+  bool onSegment2 = PointOnLineSegment(intersect, p3, p4);
+
+  return onSegment1 && onSegment2;
 }
 
 // the following 2 functions are used to detect if a point lies in a polygon
@@ -88,6 +127,10 @@ double substitute_point_in_line(const Point &pt1, const Point &pt2,
  */
 int is_point_inside_polygon(const Point &query_point,
                             std::vector<Point> &vertices) {
+  if (vertices.size() == 3)
+    return PointInsideOrOnTriangle(query_point, vertices[0], vertices[1],
+                                   vertices[2]);
+
   int wn = 0; // the  winding number counter
   const int num_sides_of_polygon = vertices.size();
 
