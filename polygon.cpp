@@ -180,10 +180,11 @@ Polygon Polygon::compute_union(Polygon A, Polygon B) {
     Point intersection;
 
     // add all interesection points of edges
-    for (int i = 1; i < A.points.size(); i++) {   // edge 1
-      for (int j = 1; j < B.points.size(); j++) { // edge 2
-        if (LineLineIntersect(A.points[i - 1], A.points[i], B.points[j - 1],
-                              B.points[j], intersection)) {
+    for (int i = 0; i < A.points.size(); i++) {   // edge 1
+      for (int j = 0; j < B.points.size(); j++) { // edge 2
+        if (DoLinesIntersect(A.points[i], A.points[(i + 1) % A.points.size()],
+                             B.points[j], B.points[(j + 1) % B.points.size()],
+                             intersection)) {
           vertex_set.insert(intersection);
         }
       }
@@ -211,30 +212,31 @@ Polygon Polygon::compute_intersection(Polygon A, Polygon B) {
     std::set<Point> vertex_set;
     Point intersection;
 
+    for (auto &pa : A.points)
+      if (is_point_inside_polygon(pa, B.points) >= 0)
+        vertex_set.insert(pa);
+
+    for (auto &pb : B.points)
+      if (is_point_inside_polygon(pb, A.points) >= 0)
+        vertex_set.insert(pb);
+
     // add all interesection points of edges
-    for (int i = 1; i < A.points.size(); i++) {   // edge 1
-      for (int j = 1; j < B.points.size(); j++) { // edge 2
-        if (LineLineIntersect(A.points[i - 1], A.points[i], B.points[j - 1],
-                              B.points[j], intersection)) {
+    for (int i = 0; i < A.points.size(); i++) {   // edge 1
+      for (int j = 0; j < B.points.size(); j++) { // edge 2
+        if (DoLinesIntersect(A.points[i], A.points[(i + 1) % A.points.size()],
+                             B.points[j], B.points[(j + 1) % B.points.size()],
+                             intersection)) {
           vertex_set.insert(intersection);
         }
       }
     }
 
-    // if point lies in or on the polygon add to the set
-    for (auto &pA : A.points)
-      if (is_point_inside_polygon(pA, B.points) >= 0) {
-        vertex_set.insert(pA);
-      }
-
-    // if point lies in or on the polygon add to the set
-    for (auto &pB : B.points)
-      if (is_point_inside_polygon(pB, A.points) >= 0) {
-        vertex_set.insert(pB);
-      }
-
-    for (auto &p : vertex_set)
-      result.points.emplace_back(p);
+    // remove external points from resultant set
+    for (auto &p : vertex_set) {
+      if (!((is_point_inside_polygon(p, A.points) == -1) ||
+            (is_point_inside_polygon(p, B.points) == -1)))
+        result.points.emplace_back(p);
+    }
 
     sort_points_counter_clockwise(result.points);
   }
@@ -254,10 +256,11 @@ Polygon Polygon::compute_subtraction(Polygon A, Polygon B) {
     Point intersection;
 
     // add all interesection points of edges
-    for (int i = 1; i < A.points.size(); i++) {   // edge 1
-      for (int j = 1; j < B.points.size(); j++) { // edge 2
-        if (LineLineIntersect(A.points[i - 1], A.points[i], B.points[j - 1],
-                              B.points[j], intersection)) {
+    for (int i = 0; i < A.points.size(); i++) {   // edge 1
+      for (int j = 0; j < B.points.size(); j++) { // edge 2
+        if (DoLinesIntersect(A.points[i], A.points[(i + 1) % A.points.size()],
+                             B.points[j], B.points[(j + 1) % B.points.size()],
+                             intersection)) {
           vertex_set.insert(intersection);
         }
       }

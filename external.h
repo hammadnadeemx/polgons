@@ -6,90 +6,54 @@
 
 struct Point; // forward decleration
 
-int PointInsideOrOnTriangle(const Point &p, const Point &v0, const Point &v1,
-                            const Point &v2) {
-  // Calculate barycentric coordinates
-  double detT = (v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y);
-  double alpha =
-      ((v1.y - v2.y) * (p.x - v2.x) + (v2.x - v1.x) * (p.y - v2.y)) / detT;
-  double beta =
-      ((v2.y - v0.y) * (p.x - v2.x) + (v0.x - v2.x) * (p.y - v2.y)) / detT;
-  double gamma = 1.0 - alpha - beta;
-
-  // Check if the point lies inside the triangle or on its edges
-  if (alpha >= 0.0 && beta >= 0.0 && gamma >= 0.0)
-    return 1;
-
-  // Check if the point lies on any of the triangle edges
-  if (std::abs(alpha) < std::numeric_limits<double>::epsilon() ||
-      std::abs(beta) < std::numeric_limits<double>::epsilon())
-    return 0;
-
-  if (std::abs(beta) < std::numeric_limits<double>::epsilon() ||
-      std::abs(gamma) < std::numeric_limits<double>::epsilon())
-    return 0;
-
-  if (std::abs(gamma) < std::numeric_limits<double>::epsilon() ||
-      std::abs(alpha) < std::numeric_limits<double>::epsilon())
-    return 0;
-
-  return -1;
+namespace {
+const double epsilon = 1e-10;
 }
 
+// Check to see if the point lies on the line segment
 bool PointOnLineSegment(const Point &p, const Point &start, const Point &end) {
-  return (p.x >= std::min(start.x, end.x) && p.x <= std::max(start.x, end.x) &&
-          p.y >= std::min(start.y, end.y) && p.y <= std::max(start.y, end.y));
+  // Check if the point is within the epsilon range of the line segment
+  return (p.x >= std::min(start.x, end.x) - epsilon &&
+          p.x <= std::max(start.x, end.x) + epsilon &&
+          p.y >= std::min(start.y, end.y) - epsilon &&
+          p.y <= std::max(start.y, end.y) + epsilon);
 }
 
-// the following 2 functions for line intersection were adapted from
-// https://gist.github.com/TimSC/47203a0f5f15293d2099507ba5da44e6#file-linelineintersect-cpp-L21
+// The following function is adapted from
+//  https://paulbourke.net/geometry/pointlineplane/Helpers.cs
+bool DoLinesIntersect(const Point &p1, const Point &p2, const Point &p3,
+                      const Point &p4, Point &ptIntersection) {
+  // Denominator for ua and ub are the same, so store this calculation
+  double d = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y);
 
-/** Calculate determinant of matrix:
-        [a b]
-        [c d]
-*/
-inline double Det(double a, double b, double c, double d) {
-  return a * d - b * c;
-}
+  // n_a and n_b are calculated as separate values for readability
+  double n_a = (p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x);
 
-/// Calculate intersection of two lines.
-///  return true if found, false if not found or error
-bool LineLineIntersect(Point p1,         // Line 1 start
-                       Point p2,         // Line 1 end
-                       Point p3,         // Line 2 start
-                       Point p4,         // Line 2 end
-                       Point &intersect) // Output
-{
-  // http://mathworld.wolfram.com/Line-LineIntersection.html
+  double n_b = (p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x);
 
-  double detL1 = Det(p1.x, p1.y, p2.x, p2.y);
-  double detL2 = Det(p3.x, p3.y, p4.x, p4.y);
-  double x1mx2 = p1.x - p2.x;
-  double x3mx4 = p3.x - p4.x;
-  double y1my2 = p1.y - p2.y;
-  double y3my4 = p3.y - p4.y;
-
-  double xnom = Det(detL1, x1mx2, detL2, x3mx4);
-  double ynom = Det(detL1, y1my2, detL2, y3my4);
-  double denom = Det(x1mx2, y1my2, x3mx4, y3my4);
-  if (denom == 0.0) // Lines don't seem to cross
-  {
-    intersect.x = NAN;
-    intersect.y = NAN;
+  // Make sure there is not a division by zero - this also indicates that
+  // the lines are parallel.
+  // If n_a and n_b were both equal to zero, the lines would be on top of each
+  // other (coincidental).  This check is not done because it is not
+  // necessary for this implementation (the parallel check accounts for this).
+  if (d == 0)
     return false;
+
+  // Calculate the intermediate fractional point that the lines potentially
+  // intersect.
+  double ua = n_a / d;
+  double ub = n_b / d;
+
+  // The fractional point will be between 0 and 1 inclusive if the lines
+  // intersect.  If the fractional calculation is larger than 1 or smaller
+  // than 0, the lines would need to be longer to intersect.
+  if (ua >= 0.0 && ua <= 1.0 && ub >= 0.0 && ub <= 1.0) {
+    ptIntersection.x = p1.x + (ua * (p2.x - p1.x));
+    ptIntersection.y = p1.y + (ua * (p2.y - p1.y));
+    return true;
   }
 
-  intersect.x = xnom / denom;
-  intersect.y = ynom / denom;
-  if (!std::isfinite(intersect.x) ||
-      !std::isfinite(intersect.y)) // Probably a numerical issue
-    return false;
-
-  // Check if the point lies within both line segments
-  bool onSegment1 = PointOnLineSegment(intersect, p1, p2);
-  bool onSegment2 = PointOnLineSegment(intersect, p3, p4);
-
-  return onSegment1 && onSegment2;
+  return false;
 }
 
 // the following 2 functions are used to detect if a point lies in a polygon
@@ -127,32 +91,32 @@ double substitute_point_in_line(const Point &pt1, const Point &pt2,
  */
 int is_point_inside_polygon(const Point &query_point,
                             std::vector<Point> &vertices) {
-  if (vertices.size() == 3)
-    return PointInsideOrOnTriangle(query_point, vertices[0], vertices[1],
-                                   vertices[2]);
-
-  int wn = 0; // the  winding number counter
+  int wn = 0; // the winding number counter
   const int num_sides_of_polygon = vertices.size();
 
   for (size_t i = 0; i < num_sides_of_polygon; ++i) {
     const auto point_in_line = substitute_point_in_line(
         vertices[i], vertices[(i + 1) % num_sides_of_polygon], query_point);
 
-    // Check if the point lies on the polygon.
-    if (point_in_line == 0) {
-      return 0;
+    // Check if the points are collinear (within epsilon)
+    if (std::abs(point_in_line) < epsilon) {
+      // Check collinear points iff they are within line bounds
+      bool onSegment = PointOnLineSegment(
+          query_point, vertices[i], vertices[(i + 1) % num_sides_of_polygon]);
+      return onSegment ? 0 : -1;
     }
+
     if (vertices[i].y <= query_point.y) {
       // Upward crossing.
       if (vertices[(i + 1) % num_sides_of_polygon].y > query_point.y) {
-        if (point_in_line > 0) {
+        if (point_in_line > epsilon) {
           ++wn; // query point is left of edge
         }
       }
     } else {
       // Downward crossing.
       if (vertices[(i + 1) % num_sides_of_polygon].y < query_point.y) {
-        if (point_in_line < 0) {
+        if (point_in_line < -epsilon) {
           --wn; // query point is right of edge
         }
       }
