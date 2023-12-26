@@ -244,9 +244,7 @@ Polygon Polygon::compute_intersection(Polygon A, Polygon B) {
   return result;
 }
 
-// calculate the subtraction of 2 polygons A-B.
-// Assumes that A and B dont have any identical vertex other wise needs more
-// checks
+// calculate the subtraction of 2 polygons A-B
 Polygon Polygon::compute_subtraction(Polygon A, Polygon B) {
   Polygon result;
 
@@ -254,6 +252,12 @@ Polygon Polygon::compute_subtraction(Polygon A, Polygon B) {
     std::set<Point> vertex_set;
     vertex_set.insert(A.points.begin(), A.points.end());
     Point intersection;
+
+    // add points of B that lie in A
+    for (auto &p : B.points) {
+      if (is_point_inside_polygon(p, A.points) == 1)
+        result.points.emplace_back(p);
+    }
 
     // add all interesection points of edges
     for (int i = 0; i < A.points.size(); i++) {   // edge 1
@@ -269,12 +273,6 @@ Polygon Polygon::compute_subtraction(Polygon A, Polygon B) {
     // remove points that lie in B from resultant set
     for (auto &p : vertex_set) {
       if (!(is_point_inside_polygon(p, B.points) == 1))
-        result.points.emplace_back(p);
-    }
-
-    // add points of B that lie in A
-    for (auto &p : B.points) {
-      if (is_point_inside_polygon(p, A.points) == 1)
         result.points.emplace_back(p);
     }
 
