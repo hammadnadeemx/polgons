@@ -33,6 +33,12 @@ int main() {
   std::cout << "square - traingle\n";
   std::cout << result << std::endl;
 
+  std::vector<Polygon> list;
+  list.emplace_back(triangle);
+  list.emplace_back(square);
+  result = result.apply_ops(list, SetOperation::Union);
+  result.write_file("/home/hammad/workspace/polgons/output.csv");
+
   if (square == triangle) {
     std::cout << "Polygons are equal." << std::endl;
   } else {

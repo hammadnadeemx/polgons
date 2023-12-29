@@ -326,3 +326,31 @@ Polygon Polygon::compute_subtraction(Polygon A, Polygon B) {
 
   return result;
 }
+
+/**< Applies the specified operation on a vector of polygons. */
+Polygon Polygon::apply_ops(std::vector<Polygon> polygons, SetOperation op) {
+  Polygon result(polygons.front());
+
+  for (size_t i = 1; i < polygons.size(); i++) {
+    if ((i > 1) && (!result.is_valid())) {
+      std::cout << "Error ! Set operation results in empty polygon.\n";
+      break;
+    }
+    switch (op) {
+    case SetOperation::Union:
+      result = compute_union(result, polygons[i]);
+      break;
+    case SetOperation::Intersection:
+      result = compute_intersection(result, polygons[i]);
+      break;
+    case SetOperation::Difference:
+      result = compute_subtraction(result, polygons[i]);
+      break;
+    default:
+      std::cout << "Undefined SetOperation.\n";
+      return result;
+    }
+  }
+
+  return result;
+}

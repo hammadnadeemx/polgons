@@ -148,6 +148,16 @@ public:
    * @return The polygon representing the subtraction of B from A.
    */
   static Polygon compute_subtraction(Polygon A, Polygon B);
+
+  /**
+   * @brief Apply the same operation to a vector of polygons
+   *
+   * @param polygons Vector of polygons.
+   * @param op The specified operation eg Union, Intersection or Difference.
+   *
+   * @return The resulting polygon.
+   */
+  static Polygon apply_ops(std::vector<Polygon> polygons, SetOperation op);
 };
 
 #endif // POLYGON_H
