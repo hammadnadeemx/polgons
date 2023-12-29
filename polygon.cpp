@@ -187,12 +187,9 @@ bool Polygon::write_file(const std::string &filename) {
     return false;
   }
 
-  /**< Write header. */
-  outputFile << "x,y" << std::endl;
-
   /**< Write polygon coordinates. */
   for (size_t i = 0; i < points.size(); ++i) {
-    outputFile << points[i].x << "," << points[i].y << std::endl;
+    outputFile << points[i].x << " " << points[i].y << std::endl;
   }
 
   outputFile.close();
