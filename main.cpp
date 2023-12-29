@@ -4,7 +4,7 @@
 #include <vector>
 
 int main() {
-  // Example usage of the Polygon class
+  /**<  Example usage of the Polygon class */
   Polygon triangle, square, result;
 
   if (!square.read_file("/home/hammad/workspace/polgons/square.csv")) {
