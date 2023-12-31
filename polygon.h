@@ -150,7 +150,7 @@ public:
   static Polygon compute_subtraction(Polygon A, Polygon B);
 
   /**
-   * @brief Apply the same operation to a vector of polygons
+   * @brief Apply the same operation to a vector of polygons.
    *
    * @param polygons Vector of polygons.
    * @param op The specified operation eg Union, Intersection or Difference.
@@ -158,6 +158,18 @@ public:
    * @return The resulting polygon.
    */
   static Polygon apply_ops(std::vector<Polygon> polygons, SetOperation op);
+
+  /**
+   * @brief Apply the same operation to a vector of polygons. Splits the
+   * workload on multiple threads to speed up computation.
+   *
+   * @param polygons Vector of polygons.
+   * @param op The specified operation eg Union, Intersection or Difference.
+   *
+   * @return The resulting polygon.
+   */
+  static Polygon apply_ops_multi_threaded(std::vector<Polygon> &polygons,
+                                          SetOperation op);
 };
 
 #endif // POLYGON_H

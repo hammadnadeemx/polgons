@@ -5,8 +5,10 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <set>
 #include <sstream>
+#include <thread>
 
 namespace { /**< Internal helper functions */
 
@@ -350,4 +352,39 @@ Polygon Polygon::apply_ops(std::vector<Polygon> polygons, SetOperation op) {
   }
 
   return result;
+}
+
+/**< Applies the specified operation on a vector of polygons with
+ * multithreading. */
+Polygon Polygon::apply_ops_multi_threaded(std::vector<Polygon> &polygons,
+                                          SetOperation op) {
+  std::mutex resultMutex;
+  std::vector<Polygon> results(polygons.begin(), polygons.end());
+
+  while (results.size() > 1) {
+    std::vector<Polygon> nextResults;
+    std::vector<std::thread> threads;
+    nextResults.reserve((results.size() / 2) + 1);
+
+    /**< Handle iterations when size is odd. */
+    if (results.size() % 2 != 0)
+      nextResults.emplace_back(results.back());
+
+    for (size_t i = 0; i < results.size() - 1; i += 2) {
+      threads.emplace_back(
+          [&](size_t idx) {
+            auto temp = apply_ops({results[idx], results[idx + 1]}, op);
+            std::lock_guard<std::mutex> lock(resultMutex);
+            nextResults.emplace_back(temp);
+          },
+          i);
+    }
+
+    for (auto &thread : threads)
+      thread.join();
+
+    results = std::move(nextResults);
+  }
+
+  return results.front();
 }

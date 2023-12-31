@@ -45,5 +45,12 @@ int main() {
     std::cout << "Polygons are not equal." << std::endl;
   }
 
+  /**< Multi threaded test. */
+  list.emplace_back(result);
+  list.emplace_back(square);
+  list.emplace_back(triangle);
+  result = result.apply_ops_multi_threaded(list, SetOperation::Union);
+  std::cout << result << std::endl;
+
   return 0;
 }
